@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home.dart';
+import 'views/home.dart';
 
 void main() => runApp(const FirstProject());
 
@@ -14,7 +14,7 @@ class FirstProject extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
       ),
-      home: const HomePage(),
+      home: HomePage(),
     );
   }
 }
