@@ -1,12 +1,24 @@
+import 'package:first_project/services/place_holder_service.dart';
+import 'package:first_project/views/components/post_card.dart';
 import 'package:first_project/views/post_page.dart';
 import 'package:first_project/views/profile_page.dart';
 import 'package:flutter/material.dart';
 
 import '../enums/snackbar_type_enum.dart';
 import '../models/post.dart';
+import '../models/post_place_holder.dart';
+import 'favorites_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final PlaceHolderService _placeHolderService = PlaceHolderService();
+  final String imageUrl = "https://picsum.photos/536/354";
   final List<Post> postList = List.generate(
     50,
     (index) => Post(
@@ -14,46 +26,94 @@ class HomePage extends StatelessWidget {
       imageUrl: "https://picsum.photos/536/354",
     ),
   );
+
+  bool _isLoading = true;
+
+  late final List<PostPlaceHolder> postPlaceHolderList;
+  @override
+  void initState() {
+    super.initState();
+    getPostList();
+  }
+
+  Future<void> getPostList() async {
+    await _placeHolderService.getPosts().then((value) {
+      setState(() {
+        postPlaceHolderList = value;
+        _isLoading = false;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.deepPurple.shade100,
       appBar: _buildAppBar(context),
-      body: _buildBody(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(),
     );
   }
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 20.0),
-          child: GestureDetector(
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const ProfilePage())),
-            onLongPress: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => PostPage(
-                          post: postList.first,
-                        ))),
-            child: const Icon(
-              Icons.person,
-              color: Colors.yellow,
+        _buildProfileButton(context),
+      ],
+      leading: _buildFavoritesButton(),
+      title: const Text("Home Page"),
+    );
+  }
+
+  Padding _buildProfileButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 20.0),
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+        ),
+        onLongPress: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PostPage(
+              post: postPlaceHolderList.first,
             ),
           ),
         ),
-      ],
-      title: const Text("Home Page"),
+        child: const Icon(
+          Icons.person,
+          color: Colors.yellow,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFavoritesButton() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20.0),
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FavoritesPage(postList: postPlaceHolderList),
+          ),
+        ),
+        child: const Icon(
+          Icons.favorite,
+          color: Colors.yellow,
+        ),
+      ),
     );
   }
 
   Widget _buildBody() {
     return Center(
       child: ListView.separated(
-        itemCount: 30,
+        itemCount: 20,
         itemBuilder: (context, index) {
-          return _buildPost(postList[index], context, index);
+          return _buildPost(postPlaceHolderList[index], context, index);
         },
         separatorBuilder: (BuildContext context, int index) {
           return const Divider(
@@ -65,7 +125,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildPost(Post post, BuildContext context, int index) {
+  Widget _buildPost(PostPlaceHolder post, BuildContext context, int index) {
     return Dismissible(
         key: UniqueKey(),
         confirmDismiss: (direction) {
@@ -115,39 +175,18 @@ class HomePage extends StatelessWidget {
         child: _buildPostCard(context, post));
   }
 
-  Widget _buildPostCard(context, post) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: ListTile(
-          title: Text(
-            post.name,
-          ),
-          trailing: _buildIconButton(context, post),
-          leading: Image.network(
-            post.imageUrl,
+  Widget _buildPostCard(context, PostPlaceHolder post) {
+    return PostCard(
+      post: post,
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostPage(
+            post: post,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildIconButton(BuildContext context, Post post) {
-    return IconButton(
-      onPressed: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PostPage(
-                      post: post,
-                    )));
-        //    print("Clicked post: $postName");
-      },
-      icon: Icon(
-        Icons.arrow_right_rounded,
-        color: Colors.blue.shade700,
-        size: 40,
-      ),
+      icon: Icons.arrow_right_rounded,
     );
   }
 
